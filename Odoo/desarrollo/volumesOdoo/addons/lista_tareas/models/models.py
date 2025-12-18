@@ -26,6 +26,14 @@ class ListaTareas(models.Model):
         store=True
     )
 
+    # --- PARTE 1: Campo de Estado ---
+    estado = fields.Selection([
+        ('nuevo', 'Nueva'),
+        ('progreso', 'En curso'),
+        ('bloqueado', 'Bloqueada'),
+        ('hecho', 'Hecha')
+    ], string='Estado', default='nuevo', required=True)
+
     @api.depends('prioridad')
     def _value_urgente(self):
         for record in self:
@@ -38,5 +46,21 @@ class ListaTareas(models.Model):
             if not record.fecha_limite:
                 record.retrasada = False
             else:
-                # Retrasada si no está hecha y la fecha límite ya pasó
                 record.retrasada = not record.realizada and record.fecha_limite < hoy
+
+    # --- PARTE 2: Métodos para los botones ---
+    def action_nuevo(self):
+        self.estado = 'nuevo'
+        self.realizada = False
+
+    def action_progreso(self):
+        self.estado = 'progreso'
+        self.realizada = False
+
+    def action_bloqueado(self):
+        self.estado = 'bloqueado'
+        # No cambiamos realizada aquí, depende del contexto, pero generalmente sigue False
+
+    def action_hecho(self):
+        self.estado = 'hecho'
+        self.realizada = True

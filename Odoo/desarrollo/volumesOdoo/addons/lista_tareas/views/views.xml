@@ -8,6 +8,10 @@
         <tree decoration-danger="retrasada == True" decoration-muted="realizada == True">
           <field name="tarea" />
           <field name="prioridad" />
+          <field name="estado" widget="badge" 
+                 decoration-success="estado == 'hecho'" 
+                 decoration-info="estado == 'progreso'"
+                 decoration-warning="estado == 'bloqueado'"/>
           <field name="urgente" />
           <field name="fecha_limite" />
           <field name="retrasada" />
@@ -22,6 +26,13 @@
       <field name="model">lista_tareas.lista_tareas</field>
       <field name="arch" type="xml">
         <form string="Formulario de Tarea">
+          <header>
+             <button name="action_progreso" type="object" string="En Curso" class="oe_highlight" invisible="estado != 'nuevo'"/>
+             <button name="action_bloqueado" type="object" string="Bloquear" invisible="estado == 'hecho'"/>
+             <button name="action_hecho" type="object" string="Marcar como Hecha" class="oe_highlight" invisible="estado == 'hecho'"/>
+             <button name="action_nuevo" type="object" string="Reiniciar" invisible="estado == 'nuevo'"/>
+             <field name="estado" widget="statusbar" statusbar_visible="nuevo,progreso,hecho"/>
+          </header>
           <sheet>
             <group>
               <field name="tarea" />
@@ -42,6 +53,37 @@
           </sheet>
         </form>
       </field>
+    </record>
+
+    <record id="lista_tareas_view_kanban" model="ir.ui.view">
+        <field name="name">lista_tareas.view.kanban</field>
+        <field name="model">lista_tareas.lista_tareas</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="estado" records_draggable="true">
+                <field name="estado"/>
+                <field name="urgente"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click oe_kanban_card">
+                            <div class="oe_kanban_content">
+                                <strong>
+                                    <field name="tarea"/>
+                                </strong>
+                                <div>
+                                    <span class="text-muted">Prioridad: </span><field name="prioridad"/>
+                                </div>
+                                <div>
+                                    <field name="asignado_a"/>
+                                </div>
+                                <div t-if="record.urgente.raw_value">
+                                    <span class="badge text-bg-danger">URGENTE</span>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
     </record>
 
     <record id="lista_tareas_view_calendar" model="ir.ui.view">
@@ -72,7 +114,7 @@
                 
                 <group expand="0" string="Agrupar por">
                     <filter string="Usuario Asignado" name="group_by_user" context="{'group_by': 'asignado_a'}"/>
-                    <filter string="Estado" name="group_by_realizada" context="{'group_by': 'realizada'}"/>
+                    <filter string="Estado" name="group_by_estado" context="{'group_by': 'estado'}"/>
                 </group>
             </search>
         </field>
@@ -92,8 +134,9 @@
     <record model="ir.actions.act_window" id="lista_tareas.action_window">
       <field name="name">Listado de tareas pendientes</field>
       <field name="res_model">lista_tareas.lista_tareas</field>
-      <field name="view_mode">tree,form,graph,calendar</field>
-      <field name="context">{'search_default_filter_no_realizada': 1}</field> </record>
+      <field name="view_mode">kanban,tree,form,graph,calendar</field>
+      <field name="context">{'search_default_filter_no_realizada': 1}</field> 
+    </record>
 
     <menuitem name="Listado de tareas" id="lista_tareas.menu_root" />
     <menuitem name="Opciones Lista Tareas" id="lista_tareas.menu_1" parent="lista_tareas.menu_root" />
